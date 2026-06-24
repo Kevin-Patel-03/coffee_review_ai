@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Nothing Before Coffee • AI Review Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg-body: #f8fafc; --bg-surface: #ffffff; --bg-elevated: #f1f5f9;
+      --border-subtle: #e2e8f0; --text-primary: #0f172a; --text-secondary: #334155;
+      --text-tertiary: #94a3b8; --accent-blue: #2563eb; --accent-blue-hover: #1d4ed8;
+      --accent-pink: #ec4899; --accent-pink-hover: #db2777;
+      --success-green: #16a34a; --success-bg: #dcfce7;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --radius-lg: 24px; --radius-full: 9999px; --font: 'Inter', system-ui, sans-serif;
+    }
+    body {
+      background: var(--bg-body); font-family: var(--font); color: var(--text-primary);
+      padding: 0 0 100px 0; min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center;
+    }
+    .app-wrapper { max-width: 640px; width: 100%; padding: 20px 16px 40px; }
+    /* Progress Bar */
+    .progress-bar {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+      gap: 8px; position: relative;
+    }
+    .progress-step {
+      display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-tertiary); transition: color 0.3s;
+    }
+    .progress-step.active { color: var(--accent-blue); }
+    .progress-step .step-num {
+      display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+      border-radius: 50%; background: var(--border-subtle); color: var(--text-tertiary);
+      font-size: 0.7rem; transition: all 0.3s;
+    }
+    .progress-step.active .step-num { background: var(--accent-blue); color: #fff; }
+    .progress-step.done .step-num { background: var(--success-green); color: #fff; }
+    .progress-line { flex: 1; height: 2px; background: var(--border-subtle); position: relative; }
+    .progress-line .fill { height: 100%; background: var(--accent-blue); width: 0%; transition: width 0.4s; }
+    /* Header */
+    .global-header { text-align: center; margin-bottom: 24px; }
+    .logo-svg { width: 80px; height: 80px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08)); }
+    .star-rating-display { font-size: 28px; letter-spacing: 2px; color: #fbbf24; margin-top: 4px; }
+    .business-name {
+      font-size: 1.8rem; font-weight: 700;
+      background: linear-gradient(135deg, #2563eb 0%, #0f172a 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .biz-meta {
+      font-size: 0.8rem; color: var(--text-tertiary);
+      background: rgba(37,99,235,0.08); padding: 4px 16px; border-radius: var(--radius-full);
+      display: inline-block; margin-top: 4px;
+    }
+    /* Categories */
+    .category-section {
+      background: var(--bg-surface); border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 12px; border: 1px solid var(--border-subtle);
+    }
+    .category-header {
+      background: var(--bg-surface); padding: 14px 18px; font-weight: 600; font-size: 0.95rem;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.15s; border-bottom: 1px solid transparent;
+    }
+    .category-header:hover { background: var(--bg-elevated); }
+    .category-header .toggle-icon { transition: transform 0.25s; display: inline-block; }
+    .category-header.collapsed .toggle-icon { transform: rotate(-90deg); }
+    .category-header .badge-count {
+      background: var(--accent-blue); color: #fff; font-size: 0.65rem;
+      border-radius: var(--radius-full); padding: 1px 10px; margin-left: 8px;
+    }
+    .product-list {
+      display: flex; flex-wrap: wrap; gap: 8px; padding: 16px;
+      background: var(--bg-elevated); border-top: 1px solid var(--border-subtle);
+    }
+    .product-chip {
+      background: var(--bg-surface); color: var(--text-primary); padding: 8px 16px;
+      border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 500;
+      cursor: pointer; border: 2px solid var(--border-subtle); transition: all 0.15s;
+      user-select: none;
+    }
+    .product-chip:hover { border-color: var(--accent-blue); }
+    .product-chip.selected {
+      background: var(--accent-pink); border-color: var(--accent-pink); color: #fff;
+      box-shadow: 0 2px 8px rgba(236,72,153,0.3);
+    }
+    .product-chip:active { transform: scale(0.95); }
+    /* Rating */
+    .rating-selector {
+      display: flex; gap: 8px; margin: 16px 0 8px; justify-content: center;
+    }
+    .rating-star {
+      font-size: 2rem; cursor: pointer; color: #d1d5db; transition: color 0.15s, transform 0.1s;
+      background: none; border: none; padding: 0 2px;
+    }
+    .rating-star.active { color: #fbbf24; }
+    .rating-star:hover { transform: scale(1.15); }
+    .rating-star:active { transform: scale(0.9); }
+    .rating-label { text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+    /* Badge */
+    .selected-items-badge {
+      background: var(--bg-elevated); padding: 12px 16px; border-radius: var(--radius-lg);
+      margin: 16px 0; font-size: 0.85rem; color: var(--text-secondary);
+      border: 1px solid var(--border-subtle); display: flex; align-items: center;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .selected-items-badge .count {
+      background: var(--accent-blue); color: #fff; border-radius: var(--radius-full);
+      padding: 0 10px; font-size: 0.7rem; font-weight: 600; line-height: 1.8;
+    }
+    .selected-items-badge .list { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    /* Action Bar */
+    .sticky-action-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, var(--bg-body) 70%, transparent);
+      padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+      backdrop-filter: blur(6px); z-index: 100; display: flex; justify-content: center;
+      pointer-events: none;
+    }
+    .sticky-action-bar > * { pointer-events: auto; max-width: 640px; width: 100%; }
+    .btn-primary, .btn-secondary, .btn-google {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 24px; border: none; border-radius: var(--radius-full); font-weight: 700;
+      font-size: 1rem; cursor: pointer; transition: all 0.15s; text-decoration: none; width: 100%;
+    }
+    .btn-primary {
+      background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+    }
+    .btn-primary:active { background: var(--accent-blue-hover); transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: var(--bg-surface); color: var(--text-primary); border: 2px solid var(--border-subtle);
+    }
+    .btn-secondary:active { background: var(--bg-elevated); transform: scale(0.97); }
+    .btn-google { background: #1a73e8; color: #fff; }
+    .btn-google:active { background: #1557b0; transform: scale(0.97); }
+    /* Steps */
+    .step-container { display: none; animation: fadeUp 0.3s ease; }
+    .step-container.active { display: block; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .review-card {
+      background: var(--bg-surface); border-radius: var(--radius-lg); padding: 20px;
+      box-shadow: var(--shadow-md); border: 1px solid var(--border-subtle); margin: 16px 0;
+    }
+    .review-text { font-size: 1rem; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; }
+    .action-row { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+    .action-row .btn-primary, .action-row .btn-secondary { flex: 1; min-width: 120px; }
+    .feedback-msg {
+      background: var(--success-bg); color: var(--success-green); padding: 10px 16px;
+      border-radius: var(--radius-full); text-align: center; font-size: 0.85rem; margin: 8px 0;
+    }
+    .feedback-error {
+      background: #fee2e2; color: #dc2626; padding: 10px 16px;
+      border-radius: var(--radius-full); text-align: center; font-size: 0.85rem; margin: 8px 0;
+    }
+    .reset-link {
+      background: none; border: none; color: var(--text-tertiary); text-decoration: underline;
+      font-size: 0.8rem; cursor: pointer; padding: 4px;
+    }
+    .reset-link:hover { color: var(--text-primary); }
+    .copyright { text-align: center; font-size: 0.7rem; color: var(--text-tertiary); padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-subtle); }
+    .note-text { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 12px; text-align: center; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #ffffff; border-radius: 50%; border-top-color: transparent; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="app-wrapper" id="app">
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-step active" data-step="1">
+      <span class="step-num">1</span> Select
+    </div>
+    <div class="progress-line"><div class="fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-step" data-step="2">
+      <span class="step-num">2</span> Review
+    </div>
+    <div class="progress-line"><div class="fill" style="width:0%"></div></div>
+    <div class="progress-step" data-step="3">
+      <span class="step-num">3</span> Publish
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="global-header">
+    <div class="logo-container">
+      <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="40" width="60" height="40" rx="8" fill="#6B4F3A" />
+        <rect x="15" y="45" width="50" height="30" rx="4" fill="#8B6B4F" />
+        <ellipse cx="40" cy="55" rx="18" ry="12" fill="#F5E6D3" />
+        <path d="M70 50 C80 50 85 55 80 65 C75 75 65 70 65 65 C65 60 68 50 70 50Z" fill="#C0A080" />
+        <path d="M30 30 L35 20 L45 25 L50 15 L55 25 L65 20 L60 30" stroke="#6B4F3A" stroke-width="4" stroke-linecap="round" />
+        <circle cx="40" cy="50" r="6" fill="#3E2723" />
+        <circle cx="40" cy="60" r="4" fill="#3E2723" />
+      </svg>
+    </div>
+    <div class="star-rating-display">★★★★★</div>
+    <div class="business-name">Nothing Before Coffee</div>
+    <div class="biz-meta">⭐ 4.8 (5000+ reviews) • Premium Coffee • Since 2017</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="step1" class="step-container active">
+    <h3 style="font-size:1.2rem; margin-bottom:4px;">☕ 1. Pick your favourites</h3>
+    <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:12px;">Tap a category, then tap items to select (multiple allowed).</p>
+    <div id="categoriesContainer"></div>
+
+    <!-- Rating -->
+    <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border-subtle); margin:12px 0;">
+      <div style="font-weight:600; font-size:0.9rem; margin-bottom:6px;">⭐ Your rating (1–5)</div>
+      <div class="rating-selector" id="ratingSelector">
+        <button class="rating-star" data-rating="1">☆</button>
+        <button class="rating-star" data-rating="2">☆</button>
+        <button class="rating-star" data-rating="3">☆</button>
+        <button class="rating-star" data-rating="4">☆</button>
+        <button class="rating-star" data-rating="5">☆</button>
+      </div>
+      <div class="rating-label" id="ratingLabel">Tap a star to rate</div>
+    </div>
+
+    <div class="selected-items-badge" id="selectedPreview">
+      <span class="count" id="selectedCount">0</span>
+      <span class="list" id="selectedList">No items selected yet</span>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step2" class="step-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="font-size:1.2rem;">📝 2. Your AI review</h3>
+      <button class="reset-link" id="backToStep1Btn">← Change selection</button>
+    </div>
+    <div class="review-card">
+      <div style="font-weight:600; margin-bottom:8px;">✨ Generated just for you:</div>
+      <div class="review-text" id="generatedReviewText"></div>
+    </div>
+    <div class="action-row">
+      <button class="btn-secondary" id="copyReviewBtn">📋 Copy</button>
+      <button class="btn-primary" id="nextToStep3Btn">➡️ Publish</button>
+    </div>
+    <div id="copyFeedback" style="min-height:40px;"></div>
+    <div class="note-text">You can edit the text after pasting into Google.</div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="step3" class="step-container">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:1.2rem;">🌐 3. Publish your review</h3>
+      <button class="reset-link" id="backToStep2Btn">← Edit review</button>
+    </div>
+    <div class="review-card" style="margin-top:12px;">
+      <div style="font-weight:600; margin-bottom:6px;">Your final review:</div>
+      <div class="review-text" id="finalReviewTextDisplay"></div>
+    </div>
+    <a id="openGoogleReviewLink" href="#" target="_blank" class="btn-google" style="display:flex; margin:12px 0;">
+      🌍 Open Google Maps &amp; paste
+    </a>
+    <button class="btn-secondary" id="copyFinalBtn" style="width:100%;">📋 Copy again</button>
+    <button class="reset-link" id="restartFromStep1" style="display:block; margin:16px auto 0;">⟳ Start over</button>
+    <div class="note-text">💡 After pasting, you can edit the text before submitting. Thank you for supporting Nothing Before Coffee!</div>
+  </div>
+
+  <div class="copyright">© 2026 · Rapidxreviews.com · turn your clicks into reviews</div>
+
+  <!-- Fixed Action Bar (visible on Step 1) -->
+  <div class="sticky-action-bar" id="actionBar">
+    <button class="btn-primary" id="step1GenerateBtn">✨ Generate AI Review →</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    'use strict';
+
+    // ---------- PRODUCT DATABASE ----------
+    const PRODUCTS_BY_CATEGORY = {
+      "Hot Coffee": ["Americano", "Cappuccino", "Latte", "Espresso", "Macchiato", "Irish Coffee", "Hot Chocolate"],
+      "Cold Coffee": ["Iced Americano", "Iced Latte", "Cold Brew", "Iced Mocha", "Cold Coffee with Ice Cream"],
+      "Shrappe (Frappe)": ["Classic Shrappe", "Caramel Shrappe", "Mocha Shrappe", "Vanilla Shrappe", "Hazelnut Shrappe"],
+      "Shakes": ["Chocolate Shake", "Strawberry Shake", "Vanilla Shake", "Oreo Shake", "KitKat Shake", "Banana Shake"],
+      "Food & Snacks": ["Tandoori Maggi", "Veg Burger", "Cheese Sandwich", "French Fries", "Pizza", "Garlic Bread"],
+      "Desserts": ["Brownie with Ice Cream", "Chocolate Mousse", "Cheesecake", "Waffles", "Pastries"],
+      "Service & Ambience": ["ambience", "staff behaviour", "service speed", "seating comfort", "music", "outdoor seating"],
+      "Founders (Akshay Kedia)": ["Akshay Kedia's vision", "the founders' passion", "their community focus", "Ankesh Jain's leadership"],
+      "Value for Money": ["pricing", "affordability", "budget-friendly", "quality-price ratio", "₹100 coffee offer"],
+      "Recommend": ["the whole experience", "the coffee quality", "the vibrant vibe", "the consistency", "the youth culture"]
+    };
+
+    // ---------- STATE ----------
+    let collapsedState = {};
+    Object.keys(PRODUCTS_BY_CATEGORY).forEach(cat => { collapsedState[cat] = true; });
+    let selectedProducts = new Set();
+    let selectedRating = 0;
+    let currentGeneratedReview = '';
+
+    // DOM refs
+    const $ = (id) => document.getElementById(id);
+    const step1 = $('step1');
+    const step2 = $('step2');
+    const step3 = $('step3');
+    const categoriesContainer = $('categoriesContainer');
+    const selectedCount = $('selectedCount');
+    const selectedList = $('selectedList');
+    const step1GenerateBtn = $('step1GenerateBtn');
+    const generatedReviewText = $('generatedReviewText');
+    const copyReviewBtn = $('copyReviewBtn');
+    const nextToStep3Btn = $('nextToStep3Btn');
+    const copyFeedback = $('copyFeedback');
+    const finalReviewTextDisplay = $('finalReviewTextDisplay');
+    const openGoogleReviewLink = $('openGoogleReviewLink');
+    const copyFinalBtn = $('copyFinalBtn');
+    const restartFromStep1 = $('restartFromStep1');
+    const backToStep1Btn = $('backToStep1Btn');
+    const backToStep2Btn = $('backToStep2Btn');
+    const actionBar = $('actionBar');
+    const ratingSelector = $('ratingSelector');
+    const ratingLabel = $('ratingLabel');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    const progressFill = $('progressFill');
+
+    // ---------- RATING UI ----------
+    function updateRatingUI() {
+      const stars = ratingSelector.querySelectorAll('.rating-star');
+      stars.forEach((star, idx) => {
+        const val = idx + 1;
+        star.textContent = val <= selectedRating ? '★' : '☆';
+        star.classList.toggle('active', val <= selectedRating);
+      });
+      const labels = ['', 'Terrible', 'Poor', 'Good', 'Very Good', 'Excellent'];
+      ratingLabel.textContent = selectedRating > 0 ? `${selectedRating} ★ — ${labels[selectedRating]}` : 'Tap a star to rate';
+    }
+
+    ratingSelector.addEventListener('click', (e) => {
+      const star = e.target.closest('.rating-star');
+      if (!star) return;
+      const val = parseInt(star.dataset.rating, 10);
+      selectedRating = (selectedRating === val) ? 0 : val;
+      updateRatingUI();
+    });
+
+    // ---------- RENDER CATEGORIES ----------
+    function renderCategories() {
+      categoriesContainer.innerHTML = '';
+      const categoryNames = Object.keys(PRODUCTS_BY_CATEGORY);
+      categoryNames.forEach(cat => {
+        const section = document.createElement('div');
+        section.className = 'category-section';
+        const isCollapsed = collapsedState[cat] !== false;
+
+        const header = document.createElement('div');
+        header.className = `category-header ${isCollapsed ? 'collapsed' : ''}`;
+        const selectedInCat = PRODUCTS_BY_CATEGORY[cat].filter(p => selectedProducts.has(p)).length;
+        const badge = selectedInCat > 0 ? `<span class="badge-count">${selectedInCat}</span>` : '';
+        header.innerHTML = `
+          <span><span class="toggle-icon">▼</span> ${cat} ${badge}</span>
+          <span>${isCollapsed ? '+' : '−'}</span>
+        `;
+        header.addEventListener('click', () => {
+          collapsedState[cat] = !collapsedState[cat];
+          renderCategories();
+        });
+
+        const productListDiv = document.createElement('div');
+        productListDiv.className = 'product-list';
+        if (!isCollapsed) {
+          PRODUCTS_BY_CATEGORY[cat].forEach(product => {
+            const chip = document.createElement('button');
+            chip.className = `product-chip ${selectedProducts.has(product) ? 'selected' : ''}`;
+            chip.textContent = product;
+            chip.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (selectedProducts.has(product)) {
+                selectedProducts.delete(product);
+              } else {
+                selectedProducts.add(product);
+              }
+              renderCategories();
+              updateSelectedPreview();
+            });
+            productListDiv.appendChild(chip);
+          });
+        } else {
+          productListDiv.style.display = 'none';
+        }
+        section.appendChild(header);
+        section.appendChild(productListDiv);
+        categoriesContainer.appendChild(section);
+      });
+    }
+
+    function updateSelectedPreview() {
+      const count = selectedProducts.size;
+      selectedCount.textContent = count;
+      if (count === 0) {
+        selectedList.textContent = 'No items selected yet';
+      } else {
+        const names = Array.from(selectedProducts);
+        selectedList.textContent = names.join(', ');
+      }
+    }
+
+    // ---------- SUPERCHARGED FALLBACK GENERATOR (if AI fails) ----------
+    function generateFallbackReview(products, rating) {
+      if (products.length === 0) return 'Please select at least one product.';
+      const adjectives = ['absolutely incredible', 'truly outstanding', 'remarkably good', 'genuinely fantastic', 'exceptionally smooth', 'rich and aromatic', 'perfectly balanced', 'insanely delicious', 'comforting and warm', 'surprisingly affordable', 'premium quality', 'mouthwateringly good'];
+      const verbs = ['blew my mind', 'hit the spot', 'exceeded my expectations', 'made my day', 'completely satisfied my craving', 'left me speechless', 'set a new standard', 'won me over instantly'];
+      const descriptors = ['the star of the show', 'an absolute game changer', 'worth every rupee', 'the highlight of my visit', 'a hidden gem on the menu', 'pure perfection in a cup'];
+      const services = ['The staff greeted me with genuine smiles and made me feel right at home.', 'Service was lightning-fast without compromising on quality or warmth.', 'The baristas clearly know their craft and even suggested a custom blend for me.', 'The ambiance was vibrant yet cozy, perfect for catching up with friends or working.'];
+      const values = ['Given the premium quality, the prices are an absolute steal.', 'They offer 100+ items, but everything I tried was consistently top-tier.', 'It is rare to find a place that balances luxury and affordability this well.', 'Their loyalty program and ₹100 coffee offers make it dangerously addictive!'];
+      const closings = ['I have officially found my new favorite spot in town. 5 stars, no doubt.', 'Do yourself a favor and visit Nothing Before Coffee immediately. You will not regret it.', 'I am already planning my next visit to try the rest of the menu. Kudos to the founders Akshay and Ankesh!', 'This is exactly what Jaipur needed. Perfect coffee, perfect vibe, perfect price.'];
+
+      let productStr = '';
+      if (products.length === 1) productStr = products[0];
+      else if (products.length === 2) productStr = `${products[0]} and ${products[1]}`;
+      else {
+        const last = products.pop();
+        productStr = `${products.join(', ')} and ${last}`;
+        products.push(last);
+      }
+      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const verb = verbs[Math.floor(Math.random() * verbs.length)];
+      const desc = descriptors[Math.floor(Math.random() * descriptors.length)];
+      const service = services[Math.floor(Math.random() * services.length)];
+      const value = values[Math.floor(Math.random() * values.length)];
+      const closing = closings[Math.floor(Math.random() * closings.length)];
+      const emoji = rating >= 5 ? '❤️' : rating >= 4 ? '👍' : '🙂';
+
+      return `I recently tried the ${productStr} at Nothing Before Coffee, and it was ${adj}. ${desc}, it ${verb}. ${service} ${value} I rate it ${rating} stars ${emoji}. ${closing}`.replace(/\s+/g, ' ').trim();
+    }
+
+    // ---------- STEP NAVIGATION ----------
+    function showStep(step) {
+      [step1, step2, step3].forEach(el => el.classList.remove('active'));
+      if (step === 1) step1.classList.add('active');
+      if (step === 2) step2.classList.add('active');
+      if (step === 3) step3.classList.add('active');
+
+      progressSteps.forEach((ps, idx) => {
+        const s = idx + 1;
+        ps.classList.remove('active', 'done');
+        if (s === step) ps.classList.add('active');
+        else if (s < step) ps.classList.add('done');
+      });
+      const progress = ((step - 1) / 2) * 100;
+      progressFill.style.width = progress + '%';
+
+      if (step === 1) {
+        actionBar.innerHTML = `<button class="btn-primary" id="step1GenerateBtn">✨ Generate AI Review →</button>`;
+        document.getElementById('step1GenerateBtn').addEventListener('click', generateAndGoToStep2);
+      } else {
+        actionBar.innerHTML = '';
+      }
+    }
+
+    // ---------- MAIN GENERATE FUNCTION (CALLS API) ----------
+    async function generateAndGoToStep2() {
+      if (selectedProducts.size === 0) {
+        alert('Please select at least one product.');
+        return;
+      }
+      if (selectedRating === 0) {
+        alert('Please select a rating (1-5 stars).');
+        return;
+      }
+
+      const btn = document.getElementById('step1GenerateBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Generating...`;
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            products: Array.from(selectedProducts),
+            rating: selectedRating
+          })
+        });
+
+        let reviewText = '';
+        if (response.ok) {
+          const data = await response.json();
+          reviewText = data.review;
+        } else {
+          // If API fails (e.g., missing key, rate limit), use fallback
+          console.warn('API returned error, using fallback generator.');
+          reviewText = generateFallbackReview(Array.from(selectedProducts), selectedRating);
+          copyFeedback.innerHTML = '<div class="feedback-error">⚠️ AI service busy. Used smart fallback.</div>';
+        }
+
+        currentGeneratedReview = reviewText;
+        generatedReviewText.textContent = currentGeneratedReview;
+        showStep(2);
+      } catch (error) {
+        console.error('Network error:', error);
+        // Use fallback on network error
+        const fallback = generateFallbackReview(Array.from(selectedProducts), selectedRating);
+        currentGeneratedReview = fallback;
+        generatedReviewText.textContent = fallback;
+        copyFeedback.innerHTML = '<div class="feedback-error">⚠️ Network issue. Used smart fallback.</div>';
+        showStep(2);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // ---------- COPY FUNCTION ----------
+    async function copyReview(text, feedbackElement) {
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        feedbackElement.innerHTML = '<div class="feedback-msg">✅ Copied to clipboard!</div>';
+      } catch (err) {
+        feedbackElement.innerHTML = `<div class="feedback-msg">📋 Please select the text and copy manually (Ctrl+C).</div>`;
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(textArea);
+      }
+    }
+
+    // ---------- NAVIGATION HELPERS ----------
+    function goToStep3() {
+      if (!currentGeneratedReview) return;
+      finalReviewTextDisplay.textContent = currentGeneratedReview;
+      const query = encodeURIComponent('Nothing Before Coffee review');
+      openGoogleReviewLink.href = `https://www.google.com/search?q=${query}`;
+      showStep(3);
+    }
+
+    function restart() {
+      if (currentGeneratedReview && !confirm('Clear your generated review and start over?')) return;
+      selectedProducts.clear();
+      selectedRating = 0;
+      currentGeneratedReview = '';
+      Object.keys(PRODUCTS_BY_CATEGORY).forEach(cat => { collapsedState[cat] = true; });
+      renderCategories();
+      updateSelectedPreview();
+      updateRatingUI();
+      copyFeedback.innerHTML = '';
+      showStep(1);
+    }
+
+    // ---------- EVENT LISTENERS (Delegated) ----------
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'copyReviewBtn') {
+        copyReview(currentGeneratedReview, copyFeedback);
+      }
+      if (e.target.id === 'nextToStep3Btn') {
+        goToStep3();
+      }
+      if (e.target.id === 'backToStep1Btn') {
+        showStep(1);
+      }
+      if (e.target.id === 'backToStep2Btn') {
+        if (currentGeneratedReview) generatedReviewText.textContent = currentGeneratedReview;
+        showStep(2);
+      }
+      if (e.target.id === 'copyFinalBtn') {
+        const fb = document.createElement('div');
+        fb.id = 'finalCopyFeedback';
+        document.getElementById('step3').appendChild(fb);
+        copyReview(currentGeneratedReview, fb);
+        setTimeout(() => { if (fb.parentNode) fb.remove(); }, 5000);
+      }
+      if (e.target.id === 'restartFromStep1') {
+        restart();
+      }
+    });
+
+    // ---------- INIT ----------
+    renderCategories();
+    updateSelectedPreview();
+    updateRatingUI();
+    showStep(1);
+  })();
+</script>
+</body>
+</html>
